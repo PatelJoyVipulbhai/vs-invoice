@@ -896,6 +896,32 @@ export default function Index() {
     const amountInWordsStr = toIndianWords(item.grandTotal);
     const termsStr = myTerms || item.notes || "";
 
+    const gstAmt = item.gstAmount !== undefined ? item.gstAmount : (item.gstRateSelection === "No Tax" ? 0 : item.subtotal * 0.18);
+    const totalBeforeRoundOff = item.subtotal + gstAmt;
+    const roundOffVal = item.grandTotal - totalBeforeRoundOff;
+
+    let totalsTableRowsHtml = "";
+    if (item.isRoundOff) {
+      totalsTableRowsHtml = `
+        <tr style="border-bottom: 1px solid black; font-size: 12px;">
+          <td style="padding: 5px; font-size: 14px; font-weight: bold; border-right: 1px solid black;">TOTAL AMOUNT</td>
+          <td style="padding: 5px;font-size: 14px; font-weight: bold; text-align: right;">${totalBeforeRoundOff.toFixed(2)}</td>
+        </tr>
+        <tr style="border-bottom: 1px solid black;">
+          <td style="padding: 5px; font-size: 14px; font-weight: bold; border-right: 1px solid black;">ROUND OFF</td>
+          <td style="padding: 5px; font-size: 14px; font-weight: bold; text-align: right;">${roundOffVal.toFixed(2)}</td>
+        </tr>
+      `;
+    } else {
+      totalsTableRowsHtml = `
+        <tr style="border-bottom: 1px solid black; font-size: 12px;">
+          <td style="padding: 5px; font-size: 14px; font-weight: bold; border-right: 1px solid black;">TOTAL AMOUNT</td>
+          <td style="padding: 5px;font-size: 14px; font-weight: bold; text-align: right;">${item.grandTotal.toFixed(2)}</td>
+        </tr>
+      `;
+    }
+
+
     printWindow.document.write(`
       <html>
         <head>
@@ -1022,10 +1048,7 @@ export default function Index() {
                       <td style="padding: 5px;font-size: 14px; font-weight: bold; text-align: right; width: 40%;">${item.subtotal.toFixed(2)}</td>
                     </tr>
                     ${gstRowsHtml}
-                    <tr style="border-bottom: 1px solid black; font-size: 12px;">
-                      <td style="padding: 5px; font-size: 14px; font-weight: bold; border-right: 1px solid black;">TOTAL AMOUNT</td>
-                      <td style="padding: 5px;font-size: 14px; font-weight: bold; text-align: right;">${item.grandTotal.toFixed(2)}</td>
-                    </tr>
+                    ${totalsTableRowsHtml}
                     <tr style="border-bottom: 1px solid black; background-color: yellow; font-size: 13px;">
                       <td style="padding: 5px; font-size: 14px; font-weight: bold; border-right: 1px solid black;">TOTAL AMOUNT</td>
                       <td style="padding: 5px;font-size: 14px; font-weight: bold; text-align: right;">${item.grandTotal.toFixed(2)}</td>
