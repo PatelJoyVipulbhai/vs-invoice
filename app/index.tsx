@@ -1048,7 +1048,7 @@ export default function Index() {
               const opt = {
                 margin:       [10, 10, 10, 10],
                 filename:     '${type}-${pdfFilename}.pdf',
-                image:        { type: 'jpeg', quality: 0.98 },
+                image:        { type: 'png', quality: 1 },
                 html2canvas:  { scale: 2, useCORS: true },
                 jsPDF:        { unit: 'mm', format: 'a4', orientation: 'portrait' }
               };
