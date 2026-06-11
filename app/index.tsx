@@ -901,7 +901,7 @@ export default function Index() {
     const roundOffVal = item.grandTotal - totalBeforeRoundOff;
 
     let totalsTableRowsHtml = "";
-    if (item.isRoundOff && Math.abs(roundOffVal) >= 0.01) {
+    if (item.isRoundOff) {
       totalsTableRowsHtml = `
         <tr style="border-bottom: 1px solid black; font-size: 12px;">
           <td style="padding: 5px; font-size: 14px; font-weight: bold; border-right: 1px solid black;">TOTAL AMOUNT</td>
