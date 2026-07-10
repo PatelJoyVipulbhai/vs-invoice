@@ -1,21 +1,19 @@
-import React, { useState, useEffect } from "react";
-import {
-  Text,
-  View,
-  ScrollView,
-  TouchableOpacity,
-  TextInput,
-  Modal,
-  Dimensions,
-  useWindowDimensions,
-  Alert,
-  Platform,
-  Image,
-} from "react-native";
-import { Ionicons, FontAwesome, MaterialIcons, Feather, MaterialCommunityIcons } from "@expo/vector-icons";
-import { collection, addDoc, deleteDoc, doc, onSnapshot, updateDoc, setDoc } from "firebase/firestore";
-import { db } from "../firebaseConfig";
+import { Feather, Ionicons, MaterialCommunityIcons, MaterialIcons } from "@expo/vector-icons";
 import DateTimePicker from "@react-native-community/datetimepicker";
+import { addDoc, collection, deleteDoc, doc, onSnapshot, setDoc, updateDoc } from "firebase/firestore";
+import React, { useEffect, useState } from "react";
+import {
+  Alert,
+  Modal,
+  Platform,
+  ScrollView,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  useWindowDimensions,
+  View
+} from "react-native";
+import { db } from "../firebaseConfig";
 
 // Define customer interface
 interface Customer {
@@ -56,6 +54,7 @@ interface Quote {
   notes?: string;
   hsnCode?: string;
   vehicleNo?: string;
+  hideQuantity?: boolean;
 }
 
 interface Invoice {
@@ -79,6 +78,7 @@ interface Invoice {
   isRoundOff?: boolean;
   hsnCode?: string;
   vehicleNo?: string;
+  hideQuantity?: boolean;
 }
 
 function toIndianWords(num: number): string {
@@ -202,6 +202,7 @@ export default function Index() {
   const [showType2Dropdown, setShowType2Dropdown] = useState<boolean>(false);
 
   const [isRoundOff, setIsRoundOff] = useState<boolean>(false);
+  const [hideQuantity, setHideQuantity] = useState<boolean>(false);
 
   // My Details Settings
   const [myCompanyName, setMyCompanyName] = useState<string>("V S ENTERPRISE");
@@ -278,6 +279,7 @@ export default function Index() {
     setGstRateSelection("CGST 9% + SGST 9%");
     setHsnCode("");
     setVehicleNo("");
+    setHideQuantity(false);
   };
 
   const resetInvoiceForm = () => {
@@ -304,6 +306,7 @@ export default function Index() {
     setGstRateSelection("CGST 9% + SGST 9%");
     setHsnCode("");
     setVehicleNo("");
+    setHideQuantity(false);
   };
 
   // Auto-detect City & State from Indian Pincode
@@ -557,6 +560,7 @@ export default function Index() {
         notes: docNotes,
         hsnCode,
         vehicleNo,
+        hideQuantity,
       };
 
       if (editingQuoteId) {
@@ -620,6 +624,7 @@ export default function Index() {
         isRoundOff,
         hsnCode,
         vehicleNo,
+        hideQuantity,
       };
 
       if (editingInvoiceId) {
@@ -648,6 +653,7 @@ export default function Index() {
     setGstRateSelection((q as any).gstRateSelection ?? "CGST 9% + SGST 9%");
     setHsnCode(q.hsnCode || "");
     setVehicleNo(q.vehicleNo || "");
+    setHideQuantity(!!q.hideQuantity);
     setIsQuoteModalOpen(true);
   };
 
@@ -669,6 +675,7 @@ export default function Index() {
     setGstRateSelection((inv as any).gstRateSelection ?? "CGST 9% + SGST 9%");
     setHsnCode(inv.hsnCode || "");
     setVehicleNo(inv.vehicleNo || "");
+    setHideQuantity(!!inv.hideQuantity);
     setIsInvoiceModalOpen(true);
   };
 
@@ -733,8 +740,10 @@ export default function Index() {
         clientType2: "Ship To",
         selectedCustomerId2: "",
         customerName2: "",
+        isRoundOff: q.isRoundOff || false,
         hsnCode: q.hsnCode || "",
         vehicleNo: q.vehicleNo || "",
+        hideQuantity: q.hideQuantity || false,
       };
 
       await addDoc(collection(db, "invoices"), invoiceData);
@@ -787,7 +796,12 @@ export default function Index() {
         <div style="font-size: 12px; font-weight: normal; line-height: 1.3; margin-bottom: 4px;">
           ${[primaryCustomer.address, primaryCustomer.locality, primaryCustomer.city, primaryCustomer.state, primaryCustomer.pincode].filter(Boolean).join(", ")}
         </div>
-        ${primaryCustomer.gstin ? `<div style="font-weight: bold; font-size: 12px; margin-bottom: 8px;">GSTIN/UIN : ${primaryCustomer.gstin}</div>` : ""}
+        ${primaryCustomer.gstin ? `<div style="font-weight: bold; font-size: 12px; margin-bottom: 4px;">GSTIN/UIN : ${primaryCustomer.gstin}</div>` : ""}
+        <div style="font-size: 12px; font-weight: normal; line-height: 1.4; margin-top: 4px;">
+          ${primaryCustomer.personName ? `<div><strong>Contact Person : </strong> ${primaryCustomer.personName}</div>` : "<div>&nbsp;</div>"}
+          ${primaryCustomer.phone ? `<div><strong>Mobile No : </strong> ${primaryCustomer.phone}</div>` : "<div>&nbsp;</div>"}
+          ${primaryCustomer.email ? `<div><strong>Email : </strong> ${primaryCustomer.email}</div>` : "<div>&nbsp;</div>"}
+        </div>
       `;
     }
     if (primaryCustomer && secondaryCustomer) {
@@ -802,25 +816,44 @@ export default function Index() {
         <div style="font-size: 12px; font-weight: normal; line-height: 1.3; margin-bottom: 4px;">
           ${[secondaryCustomer.address, secondaryCustomer.locality, secondaryCustomer.city, secondaryCustomer.state, secondaryCustomer.pincode].filter(Boolean).join(", ")}
         </div>
-        ${secondaryCustomer.gstin ? `<div style="font-weight: bold; font-size: 12px; margin-bottom: 8px;">GSTIN/UIN : ${secondaryCustomer.gstin}</div>` : ""}
+        ${secondaryCustomer.gstin ? `<div style="font-weight: bold; font-size: 12px; margin-bottom: 4px;">GSTIN/UIN : ${secondaryCustomer.gstin}</div>` : ""}
+        <div style="font-size: 12px; font-weight: normal; line-height: 1.4; margin-top: 4px;">
+          ${secondaryCustomer.personName ? `<div><strong>Contact Person : </strong> ${secondaryCustomer.personName}</div>` : "<div>&nbsp;</div>"}
+          ${secondaryCustomer.phone ? `<div><strong>Mobile No : </strong> ${secondaryCustomer.phone}</div>` : "<div>&nbsp;</div>"}
+          ${secondaryCustomer.email ? `<div><strong>Email : </strong> ${secondaryCustomer.email}</div>` : "<div>&nbsp;</div>"}
+        </div>
       `;
     }
 
-    // Generate table rows (exactly matching item count)
+    // Generate table rows (showing at least 5 product spaces)
     const items = item.items || [];
     let tableRowsHtml = "";
-    for (let i = 0; i < items.length; i++) {
+    const displayLimit = Math.max(5, items.length);
+    for (let i = 0; i < displayLimit; i++) {
       const it = items[i];
-      tableRowsHtml += `
-        <tr style="border-bottom: 1px solid black; height: 35px;">
-          <td style="border-right: 1px solid black; text-align: center; padding: 6px; font-size: 14px; font-weight: normal;">${i + 1}</td>
-          <td style="border-right: 1px solid black; padding: 6px; text-align: left; font-size: 14px; font-weight: normal;">${it.description}</td>
-          <td style="border-right: 1px solid black; text-align: center; padding: 6px; font-size: 14px; font-weight: normal;">${it.quantity}</td>
-          <td style="border-right: 1px solid black; text-align: right; padding: 6px; font-size: 14px; font-weight: normal;">${it.rate.toFixed(2)}</td>
-          <td style="border-right: 1px solid black; text-align: center; padding: 6px; font-size: 14px; font-weight: normal;">${it.unit || 'Pcs'}</td>
-          <td style="text-align: right; padding: 6px; font-size: 14px; font-weight: normal;">${it.amount.toFixed(2)}</td>
-        </tr>
-      `;
+      if (it) {
+        tableRowsHtml += `
+          <tr style="border-bottom: 1px solid black; height: 35px;">
+            <td style="border-right: 1px solid black; text-align: center; padding: 6px; font-size: 14px; font-weight: normal;">${i + 1}</td>
+            <td style="border-right: 1px solid black; padding: 6px; text-align: left; font-size: 14px; font-weight: normal;">${it.description}</td>
+            ${item.hideQuantity ? "" : `<td style="border-right: 1px solid black; text-align: center; padding: 6px; font-size: 14px; font-weight: normal;">${it.quantity}</td>`}
+            <td style="border-right: 1px solid black; text-align: right; padding: 6px; font-size: 14px; font-weight: normal;">${it.rate.toFixed(2)}</td>
+            <td style="border-right: 1px solid black; text-align: center; padding: 6px; font-size: 14px; font-weight: normal;">${it.unit || 'Pcs'}</td>
+            <td style="text-align: right; padding: 6px; font-size: 14px; font-weight: normal;">${it.amount.toFixed(2)}</td>
+          </tr>
+        `;
+      } else {
+        tableRowsHtml += `
+          <tr style="border-bottom: 1px solid black; height: 35px;">
+            <td style="border-right: 1px solid black; text-align: center; padding: 6px; font-size: 14px; font-weight: normal;">&nbsp;</td>
+            <td style="border-right: 1px solid black; padding: 6px; text-align: left; font-size: 14px; font-weight: normal;">&nbsp;</td>
+            ${item.hideQuantity ? "" : `<td style="border-right: 1px solid black; text-align: center; padding: 6px; font-size: 14px; font-weight: normal;">&nbsp;</td>`}
+            <td style="border-right: 1px solid black; text-align: right; padding: 6px; font-size: 14px; font-weight: normal;">&nbsp;</td>
+            <td style="border-right: 1px solid black; text-align: center; padding: 6px; font-size: 14px; font-weight: normal;">&nbsp;</td>
+            <td style="text-align: right; padding: 6px; font-size: 14px; font-weight: normal;">&nbsp;</td>
+          </tr>
+        `;
+      }
     }
 
     // Prepare header logo HTML
@@ -932,13 +965,21 @@ export default function Index() {
               size: A4 portrait;
               margin: 10mm;
             }
+            html, body {
+              height: 100%;
+              margin: 0;
+              padding: 0;
+              box-sizing: border-box;
+            }
             body { 
               font-family: Arial, sans-serif; 
               color: #000; 
-              margin: 0; 
-              padding: 0;
               -webkit-print-color-adjust: exact;
               print-color-adjust: exact;
+              display: flex;
+              justify-content: center;
+              align-items: center;
+              padding: 10mm;
             }
             .double-container {
               border: 3px double black;
@@ -950,7 +991,7 @@ export default function Index() {
               border-collapse: collapse;
             }
             @media print {
-              body { padding: 0; }
+              body { padding: 10mm; }
             }
           </style>
         </head>
@@ -994,8 +1035,8 @@ export default function Index() {
                 <td style="width: 40%; padding: 8px; vertical-align: top; font-size: 12px; line-height: 1.6;">
                   <div><strong>${type === "Quote" ? "Quotation Date" : "Invoice Date"} : </strong> ${docDate}</div>
                   <div><strong>${type === "Quote" ? "Quotation No" : "Invoice No"} : </strong> ${docNumber}</div>
-                  ${hsnHtml}
-                  ${vehicleHtml}
+                  ${item.hsnCode ? `<div><strong>HSN Code : </strong> ${item.hsnCode}</div>` : "<div>&nbsp;</div>"}
+                  ${item.vehicleNo ? `<div><strong>Vehicle No : </strong> ${item.vehicleNo}</div>` : "<div>&nbsp;</div>"}
                 </td>
               </tr>
             </table>
@@ -1005,8 +1046,8 @@ export default function Index() {
               <thead>
                 <tr style="border-bottom: 1px solid black; font-size: 11px; font-weight: bold; height: 30px;">
                   <th style="border-right: 1px solid black; width: 8%; padding: 4px; text-align: center;">SR. No.</th>
-                  <th style="border-right: 1px solid black; width: 48%; padding: 4px; text-align: center;">DESCRIPTION</th>
-                  <th style="border-right: 1px solid black; width: 10%; padding: 4px; text-align: center;">QTY</th>
+                  <th style="border-right: 1px solid black; width: ${item.hideQuantity ? '58%' : '48%'}; padding: 4px; text-align: center;">DESCRIPTION</th>
+                  ${item.hideQuantity ? "" : `<th style="border-right: 1px solid black; width: 10%; padding: 4px; text-align: center;">QTY</th>`}
                   <th style="border-right: 1px solid black; width: 12%; padding: 4px; text-align: center;">RATE</th>
                   <th style="border-right: 1px solid black; width: 10%; padding: 4px; text-align: center;">UNIT</th>
                   <th style="width: 12%; padding: 4px; text-align: center;">AMOUNT</th>
@@ -1069,7 +1110,7 @@ export default function Index() {
             window.onload = function() {
               const element = document.querySelector('.double-container');
               const opt = {
-                margin:       [10, 10, 10, 10],
+                margin:       [20, 10, 10, 10],
                 filename:     '${type}-${pdfFilename}.pdf',
                 image:        { type: 'png', quality: 1 },
                 html2canvas:  { scale: 2, useCORS: true },
@@ -2232,6 +2273,17 @@ export default function Index() {
                 </View>
               </View>
 
+              {/* Hide Quantity Toggle */}
+              <TouchableOpacity
+                onPress={() => setHideQuantity(!hideQuantity)}
+                className="flex-row items-center mb-4 bg-slate-50 p-2.5 rounded-lg border border-slate-200"
+              >
+                <View className={`w-5 h-5 rounded border mr-2 items-center justify-center ${hideQuantity ? "bg-blue-600 border-blue-600" : "bg-white border-slate-300"}`}>
+                  {hideQuantity && <Ionicons name="checkmark" size={14} color="#ffffff" />}
+                </View>
+                <Text className="text-sm font-semibold text-slate-700">Hide Quantity Column in PDF</Text>
+              </TouchableOpacity>
+
               {/* Dynamic Subtotals */}
               <View className="bg-slate-50 rounded-xl p-3 border border-slate-100 mb-4">
                 <View className="flex-row justify-between py-1">
@@ -2710,6 +2762,17 @@ export default function Index() {
                   {isRoundOff && <Ionicons name="checkmark" size={14} color="#ffffff" />}
                 </View>
                 <Text className="text-sm font-semibold text-slate-700">Apply Round Off</Text>
+              </TouchableOpacity>
+
+              {/* Hide Quantity Toggle */}
+              <TouchableOpacity
+                onPress={() => setHideQuantity(!hideQuantity)}
+                className="flex-row items-center mb-4 bg-slate-50 p-2.5 rounded-lg border border-slate-200"
+              >
+                <View className={`w-5 h-5 rounded border mr-2 items-center justify-center ${hideQuantity ? "bg-blue-600 border-blue-600" : "bg-white border-slate-300"}`}>
+                  {hideQuantity && <Ionicons name="checkmark" size={14} color="#ffffff" />}
+                </View>
+                <Text className="text-sm font-semibold text-slate-700">Hide Quantity Column in PDF</Text>
               </TouchableOpacity>
 
               {/* Dynamic Subtotals */}
