@@ -54,6 +54,7 @@ interface Quote {
   notes?: string;
   hsnCode?: string;
   vehicleNo?: string;
+  paymentTerms?: string;
   hideQuantity?: boolean;
 }
 
@@ -78,6 +79,7 @@ interface Invoice {
   isRoundOff?: boolean;
   hsnCode?: string;
   vehicleNo?: string;
+  paymentTerms?: string;
   hideQuantity?: boolean;
 }
 
@@ -220,6 +222,7 @@ export default function Index() {
   // Document metadata state
   const [hsnCode, setHsnCode] = useState<string>("");
   const [vehicleNo, setVehicleNo] = useState<string>("");
+  const [paymentTerms, setPaymentTerms] = useState<string>("");
 
   const [docNumber, setDocNumber] = useState<string>("");
   const [docDate, setDocDate] = useState<string>("");
@@ -279,6 +282,7 @@ export default function Index() {
     setGstRateSelection("CGST 9% + SGST 9%");
     setHsnCode("");
     setVehicleNo("");
+    setPaymentTerms("");
     setHideQuantity(false);
   };
 
@@ -306,6 +310,7 @@ export default function Index() {
     setGstRateSelection("CGST 9% + SGST 9%");
     setHsnCode("");
     setVehicleNo("");
+    setPaymentTerms("");
     setHideQuantity(false);
   };
 
@@ -560,6 +565,7 @@ export default function Index() {
         notes: docNotes,
         hsnCode,
         vehicleNo,
+        paymentTerms,
         hideQuantity,
       };
 
@@ -624,6 +630,7 @@ export default function Index() {
         isRoundOff,
         hsnCode,
         vehicleNo,
+        paymentTerms,
         hideQuantity,
       };
 
@@ -653,6 +660,7 @@ export default function Index() {
     setGstRateSelection((q as any).gstRateSelection ?? "CGST 9% + SGST 9%");
     setHsnCode(q.hsnCode || "");
     setVehicleNo(q.vehicleNo || "");
+    setPaymentTerms(q.paymentTerms || "");
     setHideQuantity(!!q.hideQuantity);
     setIsQuoteModalOpen(true);
   };
@@ -675,6 +683,7 @@ export default function Index() {
     setGstRateSelection((inv as any).gstRateSelection ?? "CGST 9% + SGST 9%");
     setHsnCode(inv.hsnCode || "");
     setVehicleNo(inv.vehicleNo || "");
+    setPaymentTerms(inv.paymentTerms || "");
     setHideQuantity(!!inv.hideQuantity);
     setIsInvoiceModalOpen(true);
   };
@@ -743,6 +752,7 @@ export default function Index() {
         isRoundOff: q.isRoundOff || false,
         hsnCode: q.hsnCode || "",
         vehicleNo: q.vehicleNo || "",
+        paymentTerms: q.paymentTerms || "",
         hideQuantity: q.hideQuantity || false,
       };
 
@@ -1037,6 +1047,7 @@ export default function Index() {
                   <div><strong>${type === "Quote" ? "Quotation No" : "Invoice No"} : </strong> ${docNumber}</div>
                   ${item.hsnCode ? `<div><strong>HSN Code : </strong> ${item.hsnCode}</div>` : "<div>&nbsp;</div>"}
                   ${item.vehicleNo ? `<div><strong>Vehicle No : </strong> ${item.vehicleNo}</div>` : "<div>&nbsp;</div>"}
+                  ${item.paymentTerms ? `<div><strong>Payment Terms : </strong> ${item.paymentTerms}</div>` : ""}
                 </td>
               </tr>
             </table>
@@ -2106,6 +2117,17 @@ export default function Index() {
                     onChangeText={setVehicleNo}
                   />
                 </View>
+                <View className="flex-1">
+                  <Text className="text-slate-600 text-xs font-semibold mb-1 uppercase tracking-wider">
+                    Payment Terms
+                  </Text>
+                  <TextInput
+                    placeholder="e.g. 30 Days Net"
+                    className="bg-slate-50 border border-slate-200 rounded-lg p-2.5 text-slate-800 outline-none focus:border-blue-500 w-full"
+                    value={paymentTerms}
+                    onChangeText={setPaymentTerms}
+                  />
+                </View>
               </View>
 
               <View className="mb-4">
@@ -2584,6 +2606,17 @@ export default function Index() {
                     className="bg-slate-50 border border-slate-200 rounded-lg p-2.5 text-slate-800 outline-none focus:border-blue-500 w-full"
                     value={vehicleNo}
                     onChangeText={setVehicleNo}
+                  />
+                </View>
+                <View className="flex-1">
+                  <Text className="text-slate-600 text-xs font-semibold mb-1 uppercase tracking-wider">
+                    Payment Terms
+                  </Text>
+                  <TextInput
+                    placeholder="e.g. 30 Days Net"
+                    className="bg-slate-50 border border-slate-200 rounded-lg p-2.5 text-slate-800 outline-none focus:border-blue-500 w-full"
+                    value={paymentTerms}
+                    onChangeText={setPaymentTerms}
                   />
                 </View>
               </View>
