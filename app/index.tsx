@@ -2241,7 +2241,7 @@ export default function Index() {
                     {openUnitDropdownIndex === idx && (
                       <View className="mt-2 p-1.5 bg-slate-100 rounded-lg flex-row justify-around items-center">
                         <Text className="text-slate-500 text-[10px] uppercase font-bold mr-1">Unit:</Text>
-                        {["Pcs", "Nos", "Kg", "Lot"].map((opt) => (
+                        {["Pcs", "Nos", "Kg", "Ltr", "Lot"].map((opt) => (
                           <TouchableOpacity
                             key={opt}
                             onPress={() => {
@@ -2732,7 +2732,7 @@ export default function Index() {
                     {openUnitDropdownIndex === idx && (
                       <View className="mt-2 p-1.5 bg-slate-100 rounded-lg flex-row justify-around items-center">
                         <Text className="text-slate-500 text-[10px] uppercase font-bold mr-1">Unit:</Text>
-                        {["Pcs", "Nos", "Kg", "Lot"].map((opt) => (
+                        {["Pcs", "Nos", "Kg", "Ltr", "Lot"].map((opt) => (
                           <TouchableOpacity
                             key={opt}
                             onPress={() => {
