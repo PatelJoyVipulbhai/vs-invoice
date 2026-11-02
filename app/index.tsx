@@ -1,7 +1,7 @@
 import { Feather, Ionicons, MaterialCommunityIcons, MaterialIcons } from "@expo/vector-icons";
 import DateTimePicker from "@react-native-community/datetimepicker";
 import { addDoc, collection, deleteDoc, doc, onSnapshot, setDoc, updateDoc } from "firebase/firestore";
-import React, { useEffect, useState } from "react";
+import React, { useCallback, useEffect, useRef, useState } from "react";
 import {
   Alert,
   Modal,
@@ -147,12 +147,13 @@ export default function Index() {
   const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
   const [pin, setPin] = useState<string>("");
   const [pinError, setPinError] = useState<string>("");
+  const pinInputRef = useRef<TextInput>(null);
 
-  const handleKeyPress = (num: string) => {
-    setPinError("");
-    if (pin.length < 4) {
-      const newPin = pin + num;
-      setPin(newPin);
+  const handleKeyPress = useCallback((num: string) => {
+    setPin((prevPin) => {
+      if (prevPin.length >= 4) return prevPin;
+      const newPin = prevPin + num;
+      setPinError("");
       if (newPin === "9876") {
         setTimeout(() => {
           setIsAuthenticated(true);
@@ -163,13 +164,84 @@ export default function Index() {
           setPin("");
         }, 200);
       }
-    }
-  };
+      return newPin;
+    });
+  }, []);
 
-  const handleBackspace = () => {
-    setPin(pin.slice(0, -1));
+  const handleBackspace = useCallback(() => {
+    setPin((prev) => prev.slice(0, -1));
     setPinError("");
-  };
+  }, []);
+
+  const handleClearPin = useCallback(() => {
+    setPin("");
+    setPinError("");
+  }, []);
+
+  const handlePinChangeDirect = useCallback((newVal: string) => {
+    const cleanDigits = newVal.replace(/[^0-9]/g, "").slice(0, 4);
+    setPin(cleanDigits);
+    setPinError("");
+    if (cleanDigits === "9876") {
+      setTimeout(() => {
+        setIsAuthenticated(true);
+      }, 150);
+    } else if (cleanDigits.length === 4) {
+      setTimeout(() => {
+        setPinError("Incorrect PIN. Please try again.");
+        setPin("");
+      }, 200);
+    }
+  }, []);
+
+  // Keyboard listener for Web & Desktop physical keyboard
+  useEffect(() => {
+    if (isAuthenticated) return;
+
+    if (Platform.OS === "web" && typeof window !== "undefined") {
+      const handleKeyDown = (e: KeyboardEvent) => {
+        // Allow browser shortcuts like Ctrl+R, F12, Cmd+Option+I, etc.
+        if (e.ctrlKey || e.metaKey || e.altKey) return;
+
+        if (e.key >= "0" && e.key <= "9") {
+          e.preventDefault();
+          handleKeyPress(e.key);
+        } else if (e.key === "Backspace") {
+          e.preventDefault();
+          handleBackspace();
+        } else if (e.key === "Escape" || e.key === "Delete") {
+          e.preventDefault();
+          handleClearPin();
+        }
+      };
+
+      const handlePaste = (e: ClipboardEvent) => {
+        const text = e.clipboardData?.getData("text") || "";
+        const digits = text.replace(/[^0-9]/g, "").slice(0, 4);
+        if (digits.length > 0) {
+          e.preventDefault();
+          handlePinChangeDirect(digits);
+        }
+      };
+
+      window.addEventListener("keydown", handleKeyDown);
+      window.addEventListener("paste", handlePaste);
+      return () => {
+        window.removeEventListener("keydown", handleKeyDown);
+        window.removeEventListener("paste", handlePaste);
+      };
+    }
+  }, [isAuthenticated, handleKeyPress, handleBackspace, handleClearPin, handlePinChangeDirect]);
+
+  // Focus hidden input on mount for mobile soft keyboard support
+  useEffect(() => {
+    if (!isAuthenticated) {
+      const timer = setTimeout(() => {
+        pinInputRef.current?.focus();
+      }, 100);
+      return () => clearTimeout(timer);
+    }
+  }, [isAuthenticated]);
 
   // State Management
   const [activeTab, setActiveTab] = useState<string>("Home");
@@ -1266,23 +1338,62 @@ export default function Index() {
           </View>
 
           <Text className="text-white text-xl font-bold mb-1">Enter Security PIN</Text>
-          <Text className="text-slate-400 text-xs text-center mb-6">Access to V S Enterprise Invoice System</Text>
+          <Text className="text-slate-400 text-xs text-center mb-4">Access to V S Enterprise Invoice System</Text>
 
-          {/* PIN Dots */}
-          <View className="flex-row space-x-4 mb-4">
-            {[0, 1, 2, 3].map((index) => {
-              const filled = pin.length > index;
-              return (
-                <View
-                  key={index}
-                  className={`w-4 h-4 rounded-full border ${filled
-                    ? "bg-blue-500 border-blue-500 shadow-md shadow-blue-500/50"
-                    : "border-slate-500 bg-transparent"
-                    }`}
-                />
-              );
-            })}
+          {/* Keyboard input indicator badge */}
+          <View className="flex-row items-center bg-slate-800/90 px-3 py-1.5 rounded-full border border-slate-700/60 mb-5">
+            <MaterialCommunityIcons name="keyboard-outline" size={14} color="#94a3b8" />
+            <Text className="text-slate-400 text-[11px] font-medium ml-1.5">
+              Type on keyboard or use keypad
+            </Text>
           </View>
+
+          {/* PIN Dots & Hidden Input for direct typing / mobile */}
+          <TouchableOpacity
+            activeOpacity={0.9}
+            onPress={() => pinInputRef.current?.focus()}
+            className="relative items-center justify-center py-2 px-6 mb-3"
+          >
+            {/* Hidden TextInput for mobile keyboard and direct input */}
+            <TextInput
+              ref={pinInputRef}
+              value={pin}
+              onChangeText={(val) => {
+                if (Platform.OS !== "web") {
+                  handlePinChangeDirect(val);
+                }
+              }}
+              keyboardType="number-pad"
+              maxLength={4}
+              caretHidden={true}
+              autoFocus={true}
+              style={{
+                position: "absolute",
+                top: 0,
+                left: 0,
+                right: 0,
+                bottom: 0,
+                opacity: 0,
+                zIndex: 1,
+              }}
+            />
+
+            <View className="flex-row space-x-4 items-center">
+              {[0, 1, 2, 3].map((index) => {
+                const filled = pin.length > index;
+                return (
+                  <View
+                    key={index}
+                    className={`w-4 h-4 rounded-full border transition-all ${
+                      filled
+                        ? "bg-blue-500 border-blue-500 shadow-md shadow-blue-500/50 scale-110"
+                        : "border-slate-500 bg-transparent"
+                    }`}
+                  />
+                );
+              })}
+            </View>
+          </TouchableOpacity>
 
           {/* Error Message */}
           <View className="h-6 justify-center mb-4">
@@ -1336,10 +1447,7 @@ export default function Index() {
             <View className="flex-row justify-between px-4 items-center">
               {/* Clear */}
               <TouchableOpacity
-                onPress={() => {
-                  setPin("");
-                  setPinError("");
-                }}
+                onPress={handleClearPin}
                 className="w-14 h-14 rounded-full justify-center items-center active:scale-95"
               >
                 <Text className="text-slate-400 text-xs font-semibold">Clear</Text>
